@@ -5,28 +5,27 @@ import Img1 from '../assets/download (1).jpeg';
 import FindDate from '../componants/FindDate';
 import { NavLink } from 'react-router-dom';
 
-export const RepliesCreated = ({ c_reply_count,py_reply_count,java_reply_count,ui_reply_count ,email}) => {
+export const RepliesCreated = ({email}) => {
  
-  const [replies,setReplies]=useState(null);
+  const [replies,setReplies]=useState([]);
+  const [languages,setLanguages] = useState([]);
   let recentReplies, lastFiveRecentReplies;
-  const [questions,setQuestion]=useState(null);
-  
+
+
+// Get Languages
 
 useEffect(()=>{
-
-    axios.get("http://localhost:2000/getRecentPosts")
-    .then((res)=>{
-      setQuestion(res.data); 
-    
-    }).catch((err)=>{
-      console.log(err);
-    })
-},[])
+  axios.get("http://localhost:2000/getLanguages")
+  .then((res)=>{
+    setLanguages(res.data);
+  })
+},[]);
 
 
+// Get User Replies
 useEffect(()=>{
 
-  axios.post("http://localhost:2000/getallreplies",{
+  axios.post("http://localhost:2000/userReplies",{
     email:email
   })
   .then((res)=>{
@@ -39,15 +38,22 @@ useEffect(()=>{
 lastFiveRecentReplies=replies?.slice(-5).reverse();
 recentReplies=(lastFiveRecentReplies);
 
-let title;
   return (
     <>
       <div className='accdetails'>
           <h1>REPLIES CREATED</h1>
-              <p><b>C Programming</b>: {c_reply_count}</p>
-              <p><b>Python Programming</b>: {py_reply_count}</p>
-              <p><b>Java Programming</b>: {java_reply_count}</p>
-              <p><b>UI/UX</b>: {ui_reply_count}</p>
+          {languages.map((value,index)=>{
+              
+              let RepliesCount=0;
+              {replies.forEach(reply => {
+                  if(reply.from_email==email && value.id==reply.language_id) {
+                    RepliesCount++;
+                  }
+              })}
+
+              return (
+                <p><b>{value.label}</b>: {RepliesCount}</p>
+            )})}
       </div>
     
     </>

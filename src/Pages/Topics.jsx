@@ -18,10 +18,13 @@ import '../Account_Pages/Recentreply.css';
 import Img11 from '../assets/NotYetPost.jpg'
 
 const Language = () => {
-
+  
+  const [language,setLanguage]= useState('')
+  const [level,setLevel]= useState('')
+  const [views,setViews]= useState([])
   const [questions,setQuestions] =useState([]);
   const location=useLocation();
-  const [replies,setReplies] =useState([]);
+  const [usernames,setUsernames]=useState([]);
   let recentReplies, lastFiveRecentReplies;
   const [users,setUsers]=useState('');
   const [posts,setPosts]=useState('');
@@ -32,8 +35,8 @@ const Language = () => {
   let title="",ques_email=""
    
   let path= window.location.pathname;
-  const language = path?.split("/")[1];
-  const level = path?.split("/")[2];
+  const language_id = path?.split("/")[1];
+  const level_id = path?.split("/")[2];
 
   
   let email,username;
@@ -47,24 +50,71 @@ const Language = () => {
   
   Cookies.remove('Ac_select');
   
- useEffect(()=>{
 
-   axios.post(`http://localhost:2000/${language}/levels`,{
-     language:language,
-     level:level
+  useEffect(() => {
+    if (language_id) {
+      axios.get("http://localhost:2000/getLanguage", {
+        params: {
+          language_id: language_id,
+        },
+      })
+      .then((res) => {
+        console.log("Language :",res.data)
+        setLanguage(res.data[0]?.name); 
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }, [language_id]);
+
+
+  // Get Level Form level Id
+  useEffect(() => {
+    if (level_id) {
+      axios.get("http://localhost:2000/getLevel", {
+        params: {
+          level_id: level_id,
+        },
+      })
+      .then((res) => {
+        console.log("Level :",res.data)
+        setLevel(res.data[0]?.name); 
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }, [level_id]);
+
+
+
+// Get posts 
+
+useEffect(()=>{
+   axios.post(`http://localhost:2000/Getpost_programLevel`,{
+     language_id:language_id,
+     level_id:level_id
     })
     .then((res)=>{
       setQuestions(res.data);
-      console.log(res.data)
+      // console.log("Questions :",res.data);
       
     }).catch((err)=>{
       console.log(err);
     })
   },[]);
-
-
+  
   useEffect(()=>{
-
+    axios.get('http://localhost:2000/usernames')
+    .then((res)=>{
+      setUsernames(res.data)
+    }).catch((err)=>{
+      console.log(err);
+    })
+  },[])
+  
+  useEffect(()=>{
     axios.get("http://localhost:2000/users")
     .then((res)=>{
       setUsers(res.data);
@@ -76,13 +126,25 @@ const Language = () => {
 
 useEffect(()=>{
 
-  axios.post('http://localhost:2000/getlevel',{
-    language:language,
-    level:level
+  axios.post('http://localhost:2000/GetReplyLang_Level',{
+    language_id:language_id,
+    level_id:level_id
   })
   .then((res)=>{
-    
     setReplies_details(res.data)
+    // console.log("Replies :",res.data)
+    
+  }).catch((err)=>{
+    console.log(err);
+  })
+},[language,level])
+
+
+useEffect(()=>{
+
+  axios.get('http://localhost:2000/GetViews_posts')
+  .then((res)=>{
+      setViews(res.data);    
   }).catch((err)=>{
     console.log(err);
   })
@@ -92,11 +154,10 @@ useEffect(()=>{
 lastFiveRecentReplies=replies_details.slice(-5).reverse();
 recentReplies=(lastFiveRecentReplies);
  
-
   return (
     <div className='bodyy'>
 
-      <FirstHeader searchh= {(data)=> setSearch(data)} content={`${language} Programming`} Languages={language} Levels={level} Posts={questions.length} />
+      <FirstHeader searchh= {(data)=> setSearch(data)} content={`${language} Programming`} Languages={language} Level={level} Posts={questions.length} />
   
     <div className='content-body'>
 
@@ -118,63 +179,85 @@ recentReplies=(lastFiveRecentReplies);
             let lastReply_username,lastReply_id,lastReply_email;
             count=0;
             a=""
-            { replies_details?.forEach(reply_details => {
             
+            { replies_details?.forEach(reply_details => {
               
               // if ((reply_details.to_email === value.email) && (reply_details.post_id === `${value.id}`)) {
               
-              if ((reply_details.post_id === `${value.id}`)) {
-                    count += 1;
-                    last_date=reply_details.date;
-                    [fetchDate,fetchMonth,fetchYear]=last_date.split("/");
-
-                    arr2=[Number(fetchDate),Number(fetchMonth),Number(fetchYear)]
+              if ((reply_details.post_id === value.id)) {
                 
-                    last_time=reply_details.time;
-                    [Hours,Minutes,seconds]=last_time.split(':');
-                    arr4=[Number(Hours),Number(Minutes)];
-                    lastReply_username=reply_details?.username;
+                    count += 1;
+                    const dateObj = new Date(reply_details.date);
+            
+                    let day = dateObj.getDate();             // Day of the month (1-31)
+                    let month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+                    let year = dateObj.getFullYear();       // Full year (e.g., 2023)
+                    
+                    let lastpostDate = [
+                      Number(day),
+                      Number(month),
+                      Number(year),
+                    ];
+                              
+                    [Hours, Minutes] = reply_details?.time.split(":");
+                    let lastpostTime = [Number(Hours), Number(Minutes)];
+                
+                    //----                   
+                    
+                    // lastReply_username=reply_details?.username;
                     lastReply_id=reply_details?.id;
                     lastReply_email=reply_details?.from_email;
-                    a=FindDate({ arr2:arr2 ,arr4:arr4 });
+                    a=FindDate({ arr2:lastpostDate ,arr4:lastpostTime });
               }
-                      
             }) 
-            }  
+            }        
 
-        return(  <tbody>
+            let name;
+            {usernames.forEach((u_name)=>{
+              if(u_name.email==value.email) {
+                name=u_name.username
+            }
+
+            })}
+            
+            let views_count=0;
+            views.forEach((view)=>{
+              if(view?.post_id==value.id) {
+                 views_count++;
+              }
+            })
           
-          <tr key={index}>
+        return(  <tbody>
 
-                <td className='pskills' >
-                    <Link to={`/${language}/${level}/discussion?discussionId=${value.id}`}  > 
+          <tr key={index}>
                         
+                <td className='pskills' >
+                    <Link to={`/${language_id}/${level_id}/discussion?discussionId=${value.id}`}  > 
                           {value.title}
                       
                     </Link>
                 </td>
               
-                <td className='levposts'>{value.views}</td>
+                <td className='levposts'>{views_count}</td>
                 <td className='levposts'>{count}</td>
                 <td className='lastpost'>
                   <ul className='lapost-list'>
 
                     {a? <div>
                             <li className='lapost-date' >
-                                <NavLink to={`/${language}/${level}/discussion?discussionId=${value.id}`} state={{lastReply_id: lastReply_id}} style={{ textDecoration: 'none',  color: "#11297f" }}>
+                                <NavLink to={`/${language_id}/${level_id}/discussion?discussionId=${value.id}`} state={{lastReply_id: lastReply_id}} style={{ textDecoration: 'none',  color: "#11297f" }}>
                                       {a}
                                 </NavLink>
                             </li> 
 
                         <li className='lapost-author'>
                             <NavLink to={`/Account?name=${lastReply_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}>
-                              <img src={Img1} alt='abc'/> <span className='non-image'>  {lastReply_username} </span>
+                              <img src={Img1} alt='abc'/> <span className='non-image'>  {name} </span>
                             </NavLink>
                         </li>
                         </div> 
                     : <ul> <li className='notposted'>{"No replies"}</li> <li className='notposted'>{"available !"}</li></ul> }  
-                    
-                    
+                          
                   </ul>
                 </td>
             </tr>
@@ -201,7 +284,8 @@ recentReplies=(lastFiveRecentReplies);
         <table className='rr'>
         
              {recentReplies?.map((value,index)=>{
-                { questions.forEach(ques_details => {
+
+                {questions.forEach(ques_details => {
 
                   ques_email=ques_details.email
                     if(ques_details.id==value.post_id) {
@@ -209,43 +293,48 @@ recentReplies=(lastFiveRecentReplies);
                     }
                  
                 }) 
-                }  
-              const date=value.date;
+                }
+                let username;
 
-              if(date) {
-                const [fetchDate,fetchMonth,fetchYear]=date.split("/");
-
-                let arr2=[Number(fetchDate),Number(fetchMonth),Number(fetchYear)]
-                let a;
-
-                const time=value.time;
-                const [Hours,Minutes,seconds]=time.split(':');
-                let arr4=[Number(Hours),Number(Minutes)];
+                {usernames.forEach((name)=>{
+                  if(name.email==value.from_email) {
+                      username=name.username
+                  }
+                })}
                 
-                a=FindDate({ arr2:arr2 ,arr4:arr4 });
-       return(
-              
-          <tr>
+                let day, month, year;
+                const dateObj = new Date(value.date);
+                day = dateObj.getDate();             // Day of the month (1-31)
+                month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+                year = dateObj.getFullYear();       // Full year (e.g., 2023)
+                
+                const [Hours, Minutes] = value?.time?.split(":");
 
-            <td>  <NavLink to={`/Account?name=${value.from_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
-                        <img src={Img1}></img> 
-                  </NavLink></td>
-            <td>  <NavLink to={`/Account?name=${value.from_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
-                         <b>{value.username}</b>
-                  </NavLink> on<br/>
-                  
-                  <NavLink to={`/${language}/${level}/discussion?discussionId=${value.post_id}`}  style={{ textDecoration: 'none',  color: "#11297f" }}>
-          
-                      {title}<br/>
-                      {a}
-                   </NavLink>
-            </td>
+                a=FindDate({ arr2: [
+                  Number(day),
+                  Number(month),
+                  Number(year),
+                ] ,arr4:[Number(Hours), Number(Minutes)] });  
 
-          </tr>
-        )
-              }else{
-                console.log("Date is not available")
-              }
+                
+                return(
+                  <tr>
+                      <td>  <NavLink to={`/Account?name=${value.from_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
+                                  <img src={Img1}></img> 
+                            </NavLink></td>
+                      <td>  <NavLink to={`/Account?name=${value.from_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
+                                  <b>{username}</b>
+                            </NavLink> on<br/>
+                            
+                            <NavLink to={`/${language_id}/${level_id}/discussion?discussionId=${value.post_id}`}  style={{ textDecoration: 'none',  color: "#11297f" }}>
+                    
+                                {title}<br/>
+                                {a}
+                            </NavLink>
+                      </td>
+                    </tr>
+                 )
+
               })}
 
             {recentReplies?.length ==0 ? <tr className='nopostsyet'>

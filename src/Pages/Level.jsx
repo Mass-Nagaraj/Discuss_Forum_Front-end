@@ -19,13 +19,16 @@ import '../Account_Pages/Recentreply.css';
 
 const Level = () => {
 
-  let Datas_=[]
-  const [questions,setQuestions] =useState([]);
+  let Datas_=[];
+  
+  const [language,setLanguage]= useState('');
+  const [usernames,setUsernames]=useState([]);
+  const [language_name,setLanguage_name]= useState('')
   const location=useLocation();
   const [lastpost,setLastPost] =useState([]);
   let recentPosts,lastFiveRecentPosts;
   const [users,setUsers]=useState('');
-  const [posts,setPosts]=useState('');
+  const [PostsCount,setPostsCount]=useState();
   const [search,setSearch]=useState('');
   const [levels,setLevels]=useState([])
 
@@ -45,48 +48,51 @@ const Level = () => {
   // console.log("puss..",email,username)
     
   let path= window.location.pathname;
-  const language=path?.split("/")[1];
+  const language_id=path?.split("/")[1];
 
 let level_count=0;
 let level_username,level_email,level_lastpostDate,level_lastpostTime,level_Lastpost=[];
 let level_reply_count=0;
   
-  let showdate=new Date()
+let arr2,arr4,a; 
 
-  let displayTodaysDate=showdate.getDate()+'/'+(showdate.getMonth()+1)+'/'+showdate.getFullYear();
-  let dt=showdate.toDateString()
-  let displayTime=showdate.getHours()+':'+showdate.getMinutes()+':'+showdate.getSeconds();
-  const [currentDate,currentMonth,currentYear] =displayTodaysDate.split('/');
-  const [currentHours,currentMinutes,currentsec]=displayTime.split(':');
+  useEffect(() => {
+    if (language_id) {
+      axios.get("http://localhost:2000/getLanguage", {
+        params: {
+          language_id: language_id,
+        },
+      })
+      .then((res) => {
+        console.log("Language :",res.data)
+        setLanguage(res.data[0]?.label); 
+        setLanguage_name(res.data[0]?.name); 
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }, [language_id]);
   
 
-  let arr1=[Number(currentDate),Number(currentMonth),Number(currentYear)];
-  let arr3=[Number(currentHours),Number(currentMinutes)];
-  let arr2,arr4,a,b,c,d;
-  let level1_reply_count=0,level2_reply_count=0,level3_reply_count=0  ,level4_reply_count=0
-  
-
-useEffect(()=>{
-  axios.post(`http://localhost:2000/${language}`,{
-    language:language
-  })
-  .then((res)=>{
-      setQuestions(res.data);
-     
-  }).catch((err)=>{
+  // Get usernames 
+  useEffect(()=>{
+    axios.get('http://localhost:2000/usernames')
+    .then((res)=>{
+      setUsernames(res.data)
+    }).catch((err)=>{
       console.log(err);
-  })
+    })
+  },[])
 
-},[]);
-
-
+// Get questions from language ID
 useEffect(()=>{
-  axios.post("http://localhost:2000/getRecentReplies",{
-    language:language
-    
+  axios.post("http://localhost:2000/GetlangPosts",{
+    language_id:language_id
+
   }).then((res)=>{
     setLastPost(res.data);
-     
+
   }).catch((err)=>{
     console.log(err);
     
@@ -102,21 +108,27 @@ useEffect(()=>{
   }) 
 },[])
 
-  useEffect(()=>{
+// Get posts for spedific Question Id
 
-    axios.get(`http://localhost:2000/posts/${language}`)
+useEffect(()=>{
+    axios.post(`http://localhost:2000/GetlangPosts`,{
+      language_id:language_id
+    })
     .then((res)=>{
-      setPosts(res.data);
+      setPostsCount(res.data.length);
     }).catch((err)=>{
       console.log(err);
     }) 
   },[])
     
 
-  useEffect(()=>{
+  
+useEffect(()=>{
 
-    axios.post('http://localhost:2000/getlang_reply',{
-      language:language,
+    axios.get('http://localhost:2000/getlang_reply',{
+      params:{
+        language_id:language_id,
+      }
     })
     .then((res)=>{
       
@@ -128,17 +140,20 @@ useEffect(()=>{
 
   useEffect(()=>{
 
-    axios.get(`http://localhost:2000/getLevels/${language}`,{
-      language:language,
+    axios.get(`http://localhost:2000/getLevelForLanguage`,{
+        params:{
+          lang_id:language_id,
+        }
     })
     .then((res)=>{
-      // console.log("Result :",res.data)
-      setLevels(res.data)
+        setLevels(res.data)
     }).catch((err)=>{
       console.log(err);
     })
-  },[language])
+  },[])
 
+
+// console.log("Language Id :",language_id,"Language :",language);
 
 lastFiveRecentPosts=lastpost.slice(-5).reverse();
 recentPosts=lastFiveRecentPosts;
@@ -146,20 +161,30 @@ recentPosts=lastFiveRecentPosts;
 
 levels.map((level,index)=>{
   level_count=0
+  level_reply_count=0
   lastpost.forEach((val,i)=>{
-    console.log(val.level,level.url)
-    if(val.level=== level.url){
+    if(val.level_id=== level.id){
           level_count++;
-          level_username=val.username
+          // level_username=val.username
           level_email=val.email;
+          let day, month, year;
+          const dateObj = new Date(val.date);
+          day = dateObj.getDate();             // Day of the month (1-31)
+          month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+          year = dateObj.getFullYear();       // Full year (e.g., 2023)
           
-          const [fetchDate, fetchMonth, fetchYear] = val.date.split("/");
-          const [Hours, Minutes] = val.time.split(':');
+
+          const [Hours, Minutes] = val?.time?.split(":");
+
+          level_lastpostDate = [
+            Number(day),
+            Number(month),
+            Number(year),
+          ];
           
-          level_lastpostDate=([Number(fetchDate), Number(fetchMonth), Number(fetchYear)]);
           level_lastpostTime=([Number(Hours), Number(Minutes)]);
           
-          level_Lastpost=([val.username, val?.email, level_lastpostDate, level_lastpostTime,val.id,val.level]);
+          level_Lastpost=([val?.email, level_lastpostDate, level_lastpostTime,val.id]);
           arr2=level_lastpostDate
           arr4=level_lastpostTime
           a=FindDate({ arr2:arr2 ,arr4:arr4 });
@@ -167,22 +192,23 @@ levels.map((level,index)=>{
   })
       
   reply_count.forEach((reply,indexx)=>{
-    if(reply.level==`${level.url}`){
+    if(reply.level_id==level.id){
       level_reply_count++;
     }
   })
+
+  // We want to get User_name from email using change put async map fun(), to find level_username
   
+  Datas_.push({"language":language, "level":`${level.name}`,"posts":level_count, "replies":level_reply_count, "lastpost_name":level_username , "lastpost_email":level_Lastpost[0], "lastpost_date":a,"lastpost_id":level_Lastpost[3] ,"url":`/${language_id}/${level.id}`})
 
-   Datas_.push({"language":language, "level":`${level.name}`,"posts":level_count, "replies":level_reply_count, "lastpost_name":level_username , "lastpost_email":level_Lastpost[1], "lastpost_date":a,"lastpost_id":level_Lastpost[4] ,"url":`/${language}/${level.url}`})
 })
-
 
   console.log("Final :",Datas_);
 
   return (
     <div className='bodyy'>
 
-       <FirstHeader searchh= {(data)=> setSearch(data)} content={`${language} Programming`} Languages={language} Levels={4} Posts= {posts.length} />
+       <FirstHeader searchh= {(data)=> setSearch(data)} content={`${language} `} Languages={language_name} Levels={levels.length} Posts= {PostsCount} />
 
     <div className='content-body'>
 
@@ -197,16 +223,21 @@ levels.map((level,index)=>{
             </tr>
         </thead> 
             <tbody>
-            
-            {console.log(Datas_)}
+
             {Datas_.filter((item,i)=>{
               console.log("item :",item)
               return !search || search.trim() === '' ?
               true :
               item?.level?.toLowerCase().includes(search.toLowerCase());
-
-
               }).map((item,i)=>{
+                
+              let name;
+              {usernames.forEach((u_name)=>{
+                if(u_name.email==item.lastpost_email) {
+                  name=u_name.username
+              }    
+              })}
+
               return(
                 <tr>
                         <td className='pskills'>
@@ -229,7 +260,7 @@ levels.map((level,index)=>{
                       
                         <li className='lapost-author'>
                             <NavLink to={`/Account?name=${item?.lastpost_email}`} style={{ textDecoration: 'none',  color: "#11297f" }}>
-                              <img src={Img1} alt='abc'/> <span className='non-image'> {item?.lastpost_name} </span>
+                              <img src={Img1} alt='abc'/> <span className='non-image'> {name} </span>
                             </NavLink> 
                         </li>
                         
@@ -253,28 +284,38 @@ levels.map((level,index)=>{
         
         {recentPosts.map((value,index)=>{
             <div key={index}></div>
-                const date=value.date;
-                const [fetchDate,fetchMonth,fetchYear]=date.split("/");
+            let a, name;
+            let day, month, year;
+            const dateObj = new Date(value.date);
+            day = dateObj.getDate();             // Day of the month (1-31)
+            month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+            year = dateObj.getFullYear();       // Full year (e.g., 2023)
+            
+            const [Hours, Minutes] = value?.time?.split(":");
 
-                let arr2=[Number(fetchDate),Number(fetchMonth),Number(fetchYear)]
-                let a;
+            {usernames.forEach((u_name)=>{
+              if(u_name.email==value.email) {
+                name=u_name.username
+               }
+            })}
 
-                const time=value.time;
-                const [Hours,Minutes,seconds]=time.split(':');
-                let arr4=[Number(Hours),Number(Minutes)];
-                a=FindDate({ arr2:arr2 ,arr4:arr4 });
 
-                return(
-
-                  
+            a=FindDate({ arr2: [
+              Number(day),
+              Number(month),
+              Number(year),
+            ] ,arr4:[Number(Hours), Number(Minutes)] });
+            
+            return(
+            
                 <tr>
                       <td> <NavLink to={`/Account?name=${value.email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
                               <img src={Img1}></img> 
                           </NavLink></td>
                           
                       <td> <NavLink to={`/Account?name=${value.email}`} style={{ textDecoration: 'none',  color: "#11297f" }}> 
-                            <b>{value.username}</b>
-                          </NavLink> on<br/>
+                            <b>{name}</b>
+                          </NavLink> on <br/>
                       
                           <NavLink to={`/${language}/${value.level}/discussion?discussionId=${value.id}`}  style={{ textDecoration: 'none',  color: "#11297f" }}>
                     

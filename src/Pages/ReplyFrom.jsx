@@ -65,12 +65,22 @@ useEffect(()=>{
 function handleSubmit1(event){
 
     event.preventDefault();
-        showdate=new Date();
+      
         let formData1= new FormData;
-    
-        displayTodaysDate=showdate.getDate()+'/'+(showdate.getMonth()+1)+'/'+showdate.getFullYear();
-        displayTime=showdate.getHours()+':'+showdate.getMinutes()+':'+showdate.getSeconds();
-            
+        
+        var today = new Date();
+        var year = today.getFullYear();
+        var mes = today.getMonth()+1;
+        var dia = today.getDate();
+        var fecha =year+"-"+mes+"-"+dia;
+
+        var hour=today.getHours();
+        var minutes=today.getMinutes();
+        var seconds=today.getSeconds();
+        // var time = today.getTime();
+        var fecha1 =hour+":"+minutes+":"+seconds;
+        console.log(fecha1);
+                  
         if(sub_id==null) {
 
             formData1.append('to_main_replyid',main_id);
@@ -79,12 +89,11 @@ function handleSubmit1(event){
             formData1.append('to_sub_replyid',sub_id);
         }
 
-        formData1.append('username',username);
         formData1.append('from_email',email);
         formData1.append('post_id',post_id);
         formData1.append('body',reply);
-        formData1.append('date',displayTodaysDate);
-        formData1.append('time',displayTime);
+        formData1.append('date',fecha);
+        formData1.append('time',fecha1);
     
         // console.log(formData1)
     
@@ -109,12 +118,10 @@ function handleSubmit1(event){
     
     
  }
- //  console.log(main_id,sub_id)
- //  console.log("sub replies",subreplies)
-    
+
+
   return (
     <div>
-
           <form onSubmit={handleSubmit1}>
                   <button className="open-btn" type="button" onClick={openDrawer2}>
                       Reply

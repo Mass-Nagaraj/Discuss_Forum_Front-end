@@ -2,20 +2,24 @@ import React from 'react'
 
 const FindDate = ({arr2,arr4}) => {
     
-    let showdate=new Date()
+  
+  let showdate=new Date()
+  
+  let displayTodaysDate=showdate.getDate()+'/'+(showdate.getMonth()+1)+'/'+showdate.getFullYear();
+  let dt=showdate.toDateString()
+  let displayTime=showdate.getHours()+':'+showdate.getMinutes()+':'+showdate.getSeconds();
+  const [currentDate,currentMonth,currentYear] =displayTodaysDate.split('/');
+  const [currentHours,currentMinutes,currentsec]=displayTime.split(':');
 
-    let displayTodaysDate=showdate.getDate()+'/'+(showdate.getMonth()+1)+'/'+showdate.getFullYear();
-    let dt=showdate.toDateString()
-    let displayTime=showdate.getHours()+':'+showdate.getMinutes()+':'+showdate.getSeconds();
-    const [currentDate,currentMonth,currentYear] =displayTodaysDate.split('/');
-    const [currentHours,currentMinutes,currentsec]=displayTime.split(':');
-
-    let arr1=[Number(currentDate),Number(currentMonth),Number(currentYear)];
-    let arr3=[Number(currentHours),Number(currentMinutes)];
-    let date=[];
-    
+  let arr1=[Number(currentDate),Number(currentMonth),Number(currentYear)];
+  let arr3=[Number(currentHours),Number(currentMinutes)];
+  let date;
+  // console.log("DB :arr1 arr3:",arr1,arr3);
+  
+  // console.log("NOW :arr2 arr4 :",(arr2),(arr4));
     if(arr1[2]-arr2[2]!==0){
-      date= arr2[2]-arr1[1]+"Years ago";
+      date= arr1[2]-arr2[2]+" Years ago";
+
     }
     else if(arr1[1]-arr2[1]!==0){
       date= arr1[1]-arr2[1]+" Months ago";
@@ -32,6 +36,8 @@ const FindDate = ({arr2,arr4}) => {
     else{
       date= "Just Now";
     }
+
+    console.log(date)
   
 
   return date;

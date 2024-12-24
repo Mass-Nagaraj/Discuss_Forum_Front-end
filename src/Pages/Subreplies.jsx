@@ -14,6 +14,7 @@ import { FaPen } from 'react-icons/fa6';
 
 const Subreplies = ({MainReplyId,MainReplyUsername,SubReplyId,SubReplyUsername,post_id,email,username,question1}) => {
 
+const [usernames,setUsernames]=useState([]);
 const [subb,setSubb]=useState([])
 const [demo,setDemo]=useState([]);
 const [viewReply,setViewReply]=useState(false);
@@ -40,6 +41,17 @@ const handleFileChange = (e) => {
   setFile(e.target.files[0]);
 };
 
+
+useEffect(()=>{
+
+    axios.get('http://localhost:2000/usernames')
+    .then((res)=>{
+      setUsernames(res.data)
+    }).catch((err)=>{
+      console.log(err);
+    })
+  },[])
+    
 
 function deltReply(Sub_ReplyId) {
 
@@ -136,19 +148,28 @@ function handleSubmit1(event){
                     padding: "20px 0"
                 };
 
+                let name;
+
+                {usernames.forEach((u_name)=>{
+                  if(u_name.email==value.from_email) {
+                    name=u_name.username
+                }
+                })}
+      
+
                 return(  
                         <>
-
                         <div style={style}>
                                 <div className='secrepexample'>
                                                                                 
                                     <div className='secrephead'>
-                                            <p><NavLink  to={`/Account?name=${value.from_email}`} state={{Profile_click:"yes"}} > <img src={Img1}/> {value.username}</NavLink></p>
+                                            <p><NavLink  to={`/Account?name=${value.from_email}`} state={{Profile_click:"yes"}} > <img src={Img1}/> {name}</NavLink></p>
                                         </div>
 
                                         <div className='secreppara'>
                                             {SubReplyUsername==null ? <p>@{MainReplyUsername}</p> :<p>@{SubReplyUsername}</p>}
                                             <br/>
+                                            
                                                 <p>{value.body}</p> <br/>
                                                 <div className='secimg'>
                                                         { (value.image!=null)? <img src={`http://localhost:2000/images/${value.image}`} alt='xyz'/> : null} 
@@ -172,21 +193,18 @@ function handleSubmit1(event){
                                                     </div>:null }
                                                     {(email !== value.from_email) ?  <div className='replybutton'>
 
-                                                        <ReplyFrom  question={`${value.username}`} question1={question1} username={username} email={email} post_id={post_id} sub_id={value.id}  />
+                                                        <ReplyFrom  question={`${name}`} question1={question1} username={username} email={email} post_id={post_id} sub_id={value.id}  />
 
                                                         </div>: null } 
 
                                         </div>
                                         </div>
-                                       
-                                       
-                                        
                                         </div>
                                     
                                     <br/>
 
                                     
-                                    <ViewReplies SubReplyId={value.id} SubReplyUsername={value.username} post_id={post_id} email={email} username={username} />
+                                    <ViewReplies SubReplyId={value.id} SubReplyUsername={name} post_id={post_id} email={email} username={username} />
 
                             <form onSubmit={handleSubmit1}>
                                     <div className={`drawer ${isOpen ? 'open' : ''}`}>

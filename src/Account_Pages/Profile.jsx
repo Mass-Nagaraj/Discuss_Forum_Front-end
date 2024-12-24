@@ -5,9 +5,7 @@ import FindDate from '../componants/FindDate';
 
 export function Profile({email,nowemail,active,questions,replies})  {
   
-  // props?.selected(selectedComponent);
-  //  
-
+  
    return (
      <>
         <div className='accdetails'>               

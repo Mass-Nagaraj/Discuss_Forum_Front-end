@@ -16,22 +16,20 @@ import { jwtDecode } from 'jwt-decode';
 
 
 const Discussionform = () => {
-    const [language, setLanguage] = useState('');
-    const [level, setLevel] = useState('');
+
+    const [languages,setLanguages]= useState([]);
+    const [selectId,setSelectId]= useState();
+    const [selectLevelId,setSelectLevelId]= useState();
+    const [levels,setLevels]= useState([]);
+    const [language_id, setLanguageID] = useState();
+    const [level_id, setLevelID] = useState('');
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedLevel, setSelectedLevel] = useState('');
     const [error,setError] =useState('')
-    const [insertDate,setInsertDate]=useState('');
-    const [insertMonth,setInsertMonth]=useState('');
-    const [insertYear,setInsertYear]=useState('');
-    const location=useLocation();
     const [file,setFile]=useState();
     const [EditingDatas,setEditingDatas]=useState([]);
-    const [views,setViews]=useState(0);
-    const [likes,setLikes]=useState(0);
-    const [editing_postId,setEditing_postId]=useState();
     const [editor,setEditor]=useState();
     const [pre_image,setPre_image]=useState(null)
     const navigate=useNavigate();
@@ -46,32 +44,58 @@ const Discussionform = () => {
       username= decode_payload.username;
     
     }
-    
+
     Cookies.remove('Ac_select');
     
     const MyKeyValues=window.location.search;
     const queryParams=new URLSearchParams(MyKeyValues);
     const EditPostId=queryParams.get("EditPostId");
+
   
+  // Get Levels for selected language
   
+  useEffect(()=>{
+    axios.get("http://localhost:2000/getLevelForLanguage",{
+      params:{
+        lang_id:selectId
+      }
+    })
+    .then((res)=>{
+      setLevels(res.data)
+    }).catch((err)=>{
+        console.log(err);
+    });
+
+  },[selectId])
+
+
+  // Fetch languages
+  useEffect(() => {
+    axios
+      .get("http://localhost:2000/getLanguages")
+      .then((res) => {
+        setLanguages(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+
   useEffect(()=>{
 
     if( EditPostId != null) {
       
-      axios.post('http://localhost:2000/edit',{
+      axios.post('http://localhost:2000/QuestionId',{
         id:EditPostId
       }).then((res)=>{
-        // console.log("Eding Datas :",res.data);
+        console.log("Editing Datas :",res.data);
         setEditingDatas(res.data);
         setEditor(res.data[0]?.email);
-        setLanguage(res.data[0]?.language);
-        setLevel(res.data[0]?.level);
+        setLanguageID(res.data[0]?.language_id);
+        setLevelID(res.data[0]?.level_id);
         setTitle(res.data[0]?.title);
         setBody(res.data[0]?.body);
-        setViews(res.data[0]?.views)
-        setLikes(res.data[0]?.likes);
-        // setEditing_postId(EditPostId);
-        
         if(res.data[0]?.image==null) {
           setFile(null);
         }
@@ -81,65 +105,57 @@ const Discussionform = () => {
         }
       
       }).catch((err)=> console.log(err));
-      
+     
     }
 
   },[EditPostId]);
+
+  useEffect(() => {
+    if (language_id) {
+      axios.get("http://localhost:2000/getLanguage", {
+        params: {
+          language_id: language_id,
+        },
+      })
+      .then((res) => {
+        console.log("Language :",res.data)
+        // setLanguage(res.data[0]?.label); 
+        setSelectedLanguage(res.data[0]?.name); 
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+  }, [language_id]);
   
-  
+
 if(EditPostId!=null) {
-
-  if(editor!=email) {
-    return <p>Questions Editing Only Access For Question poster...</p>
-  }
-
+  
+    if(editor!=email) {
+      return <p>Questions Editing Only Access For Question poster...</p>
+    }
 }
-    let showdate=new Date()
+    var today = new Date();
+    var year = today.getFullYear();
+    var mes = today.getMonth()+1;
+    var dia = today.getDate();
+    var fecha =year+"-"+mes+"-"+dia;
+  
+    var hour=today.getHours();
+    var minutes=today.getMinutes();
+    var seconds=today.getSeconds();
+    var fecha1 =hour+":"+minutes+":"+seconds;
 
-    let displayTodaysDate=showdate.getDate()+'/'+(showdate.getMonth()+1)+'/'+showdate.getFullYear();
-    let dt=showdate.toDateString()
-    let displayTime=showdate.getHours()+':'+showdate.getMinutes()+':'+showdate.getSeconds();
-    
-    // console.log(displayTodaysDate," ",dt);
-    // console.log(displayTime);
+    console.log("Before :",language_id,level_id);
 
-    const [currentDate,currentMonth,currentYear] =displayTodaysDate.split('/');
-    // console.log("Todays Date:"+ currentDate,currentMonth,currentYear);
-    
-
-
-  const languages = [
-    { value: 'C', label: 'Programming C' },
-    { value: 'Python', label: 'Programming Python' },
-    { value: 'Java', label: 'Programming Java' },
-    { value: 'UIUX', label: 'UIUX' },
-  ];
-
-  const levels = 
-     [
-      { value: 'Level1', label: 'Level 1' },
-      { value: 'Level2', label: 'Level 2' },
-      { value: 'Level3', label: 'Level 3' },
-      { value: 'Level4', label: 'Level 4'},
-      { value: 'Level5', label: 'Level 5' },
-    ];
-
- 
-
-    formData.append('username',username);
-    // console.log("form data username :",formData.get('username'))
     formData.append('email',email);
-    formData.append('language', language);
-    formData.append('level', level);
+    // These are edit from already added Post (language_id,level_id)
+    formData.append('language_id',Number(language_id));
+    formData.append('level_id', Number(level_id));
     formData.append('title', title);
     formData.append('body', body);
-    formData.append('date', displayTodaysDate);
-    formData.append('time', displayTime); 
-
-    formData.append('views',views);
-    formData.append('likes',likes);
-
-
+    formData.append('date', fecha);
+    formData.append('time', fecha1); 
 
     if(file){
       formData.append('image', file); 
@@ -150,12 +166,13 @@ if(EditPostId!=null) {
 
     const handleSubmit = (event) => {
     event.preventDefault();
-    console.log('Form submitted:', { username,email,language,level, title, body,displayTodaysDate,displayTime,file });
+    console.log('Form submitted:', { email,language_id,level_id, title, body,fecha,fecha1,file });
     console.log("Form data File : ",file?.name)
     
     if(EditPostId==null) {
       // console.log("True ...Form datas..",formData)
 
+    
         axios.post("http://localhost:2000/Discussion",formData)
         .then((res)=>{
             console.log("Question added SuccessFully...!")
@@ -163,9 +180,9 @@ if(EditPostId!=null) {
             console.log(err);
         });
 
-    }else{  
-      
-      
+    }
+    
+    else{  
       formData.append('edit_id',EditPostId);
       if(pre_image!=null) {
 
@@ -175,14 +192,14 @@ if(EditPostId!=null) {
         axios.post("http://localhost:2000/EditDiscussion",formData)
         .then((res)=>{
           console.log("Question Edited SuccessFully...!");
-          navigate(`/${language}/${level}/discussion?discussionId=${EditPostId}`);
+          navigate(`/${language_id}/${level_id}/discussion?discussionId=${EditPostId}`);
 
         }).catch((err)=>{
           console.log(err);
         })
     }
-      setLanguage('');
-      setLevel('');
+      setLanguageID('');
+      setLevelID('');
       setTitle('');
       setBody('');
       setFile('');  
@@ -191,8 +208,8 @@ if(EditPostId!=null) {
   
   function cancel() {
       
-    setLanguage('');
-    setLevel('');
+    setLanguageID('');
+    setLevelID('');
     setTitle('');
     setBody('');
     setFile('');
@@ -200,14 +217,14 @@ if(EditPostId!=null) {
   }
 
   function notify(){
-    if(!(language && level && title && body)){
+    if(!(selectId && selectLevelId && title && body)){
       setError('Enter Your Email and Password')
     } 
     else{
       setError('')
     }
 
-    if(language && level && title && body) {
+    if(selectId && selectLevelId && title && body) {
       let toastMsg='Success..!';
       if(EditPostId!=null) {
         toastMsg='Edited Success..!';
@@ -223,18 +240,7 @@ if(EditPostId!=null) {
         theme: "colored",
         transition: Bounce,
       });
-      
-      // toast.warn('Warning..!', {
-      //   position: "top-center",
-      //   autoClose: 3000,
-      //   hideProgressBar: false,
-      //   closeOnClick: true,
-      //   pauseOnHover: true,
-      //   draggable: true,
-      //   progress: undefined,
-      //   theme: "colored",
-      //   transition: Bounce,
-      //   });
+
     }
     else{
         toast.error('Enter the below Details..!', {
@@ -250,13 +256,9 @@ if(EditPostId!=null) {
         });
   }
 }
-// console.log("Editing datas is :",EditingDatas)
-
-// console.log("Image File :",file)
 
 return (
     <div>
-
       <Header1  email={email}/>
             <div className='form-container'>
                 <ToastContainer
@@ -281,9 +283,17 @@ return (
             <form className='form-group' onSubmit={handleSubmit}>
               
               <h4>SKILL</h4>
-              <select required value={language} onChange={(e) => {
-                                                setLanguage(e.target.value);
-                                                setSelectedLanguage(e.target.value);
+              <select required value={selectedLanguage} onChange={(e) => {
+                const selectedValue = e.target.value;
+                const selectedSubject = languages.find(
+                  (subject) => subject.label == selectedValue
+                );
+                if (selectedSubject) {
+                  console.log(selectedSubject.id)
+                  setSelectId(selectedSubject.id);
+                  setLanguageID(selectedSubject.id);
+                }
+                setSelectedLanguage(selectedValue);
               }}>
               
               <option value="">Select Language</option>
@@ -295,9 +305,17 @@ return (
                 ))}
               </select>
               <h4>LEVEL</h4>
-              <select required value={level} onChange={(e) => {
-                                                  setLevel(e.target.value);
-                                                  setSelectedLevel(e.target.value);
+              <select required value={selectedLevel} onChange={(e) => {
+                const selectedValue = e.target.value;
+                const selectedSubject = levels.find(
+                  (subject) => subject.label == selectedValue
+                );
+                if (selectedSubject) {
+                  console.log(selectedSubject.id)
+                  setSelectLevelId(selectedSubject.id);
+                  setLevelID(selectedSubject.id);
+                }
+                setSelectedLevel(selectedValue);
               }}>
                 
               <option value="">Select Level</option>
@@ -305,7 +323,7 @@ return (
                     <option key={chapter.value} value={chapter.value}>
                       {chapter.label}
                     </option>
-                ))} 
+                ))}
 
               </select>
               <h4>SUBJECT</h4>
@@ -338,20 +356,17 @@ return (
                                               }}>
                                             &times;
           </button>}
-       
-        {/* {console.log(file)} */}
+
           {file && <p className='file-upload-para-bold'> <b>Selected file: </b> {file.name}</p>} 
       <div className='button-container'>
 
               <button type="button" className='discussion-cancel-btn' onClick={cancel}>CANCEL</button>
               {EditPostId==null ?  <Button  onClick={notify} intent="primary" type="submit" className='discussion-cancel-btn'>SUBMIT</Button>:
                <Button  onClick={notify} intent="primary" type="submit" className='discussion-cancel-btn'>Edit</Button>}
-             
       </div>
                     
             </form>
           </div>
-      {/* <Footer/> */}
       </div>
   );
 };

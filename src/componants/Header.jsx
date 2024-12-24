@@ -9,7 +9,7 @@ import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 
 
-export const FirstHeader = ( {content,Languages,Levels,Posts,...props }) => {
+export const FirstHeader = ( {content,Languages,Level,Posts,...props }) => {
   
   const [users,setUsers]=useState('');
   // const [username,setUsername]=useState('');
@@ -19,8 +19,7 @@ export const FirstHeader = ( {content,Languages,Levels,Posts,...props }) => {
   axios.defaults.withCredentials = true;
   
   const navigate = useNavigate();
-  
-  
+
    
 // useEffect(()=>{
 
@@ -123,12 +122,12 @@ if(jwt_token) {
               <td>{users.length}</td>
             </tr>
             <tr>
-              <th>Languages</th>
+              <th>Language</th>
               <td>{Languages}</td>
             </tr>
             <tr>
-              <th>Levels</th>
-              <td>{Levels}</td>
+              <th>Level</th>
+              <td>{Level}</td>
             </tr>
             <tr>
               <th>Posts</th>

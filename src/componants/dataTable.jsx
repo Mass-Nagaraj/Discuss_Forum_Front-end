@@ -16,15 +16,15 @@ export const DataTable = ({ searchh }) => {
   const [posts, setPosts] = useState([]);
   const [tableData, setTableData] = useState([]);
   const search = searchh;
+  
+    let email,username;
 
-  let email, username;
   const jwt_token = Cookies.get("token");
   if (jwt_token) {
     const decode_payload = jwtDecode(jwt_token);
     email = decode_payload.email;
     username = decode_payload.username;
   }
-
   // Get current date and time
   let showdate = new Date();
   let displayTodaysDate =
@@ -48,7 +48,7 @@ export const DataTable = ({ searchh }) => {
   // Fetch posts
   useEffect(() => {
     axios
-      .get("http://localhost:2000/posts")
+      .get("http://localhost:2000/getallposts")
       .then((res) => {
         setPosts(res.data);
       })
@@ -73,9 +73,32 @@ export const DataTable = ({ searchh }) => {
   async function find_level_count(lang_id) {
     try {
       const res = await axios.get(
-        `http://localhost:2000/getLevelCount/${lang_id}`
+        `http://localhost:2000/getLevelForLanguage/`,{
+          params:{
+            lang_id:lang_id
+          }
+        }
       );
       return res.data.length;
+    } catch (err) {
+      console.error(err);
+      return 0;
+    }
+  }
+
+  // Function to get username 
+  async function get_user(email) {
+    try {
+      
+      if(email) {
+        const res = await axios.post(
+          `http://localhost:2000/profile_info`,{
+            email:email
+          }
+        );
+        return res.data[0].username;
+      }
+      return '';
     } catch (err) {
       console.error(err);
       return 0;
@@ -91,68 +114,76 @@ export const DataTable = ({ searchh }) => {
       let lang_lastposts = [];
       let lang_lastpostDate;
       let lang_lastpostTime;
-      let fetchDate, fetchMonth, fetchYear;
       let Hours, Minutes;
+      let day, month, year;
       let a;
 
       // Process posts for current language
       posts?.forEach((val) => {
-        if (val?.language === value?.url) {
+        if (val?.language_id === value?.id) {
           lang_count++;
           
-          if (val?.date && typeof val.date === 'string') {
-            [fetchDate, fetchMonth, fetchYear] = val.date.split("/");
-          }
-          [Hours, Minutes] = val.time.split(":");
+          const dateObj = new Date(val.date);
+         
+          day = dateObj.getDate();             // Day of the month (1-31)
+          month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+          year = dateObj.getFullYear();       // Full year (e.g., 2023)
+          
+
+          [Hours, Minutes] = val?.time?.split(":");
 
           lang_lastpostDate = [
-            Number(fetchDate),
-            Number(fetchMonth),
-            Number(fetchYear),
+            Number(day),
+            Number(month),
+            Number(year),
           ];
           lang_lastpostTime = [Number(Hours), Number(Minutes)];
           
           lang_lastposts = [
-            val.username,
-            val.email,
+            val.id,
+            val.email,  // last post user -> email
+            val.language_id,
+            val.level_id,
             lang_lastpostDate,
             lang_lastpostTime,
-            val.id,
-            val.language,
-            val.level,
           ];
-
+          
           // Calculate time difference
           a = FindDate({
             arr2: lang_lastpostDate,
             arr4: lang_lastpostTime,
           });
+
         }
       });
 
       // Wait for level count
       const level = await find_level_count(value.id);
-
+      let user_name = await get_user(lang_lastposts[1]);
+      // console.lo
       Datas_.push({
+        id:value.id,
         skill: value.name,
         level: level,
         posts: lang_count,
         lastpost_time: a,
-        lastpost_name: lang_lastposts[0],
+        lastpost_id: lang_lastposts[0],
+        lastpost_username: user_name,
         lastpost_email: lang_lastposts[1],
-        lastpost_id: lang_lastposts[4],
-        lastpost_lang: lang_lastposts[5],
-        lastpost_level: lang_lastposts[6],
+        lang_id: lang_lastposts[2],
+        level_id: lang_lastposts[3],
         url: value.url,
       });
     }
+    console.log(Datas_)
 
     return Datas_;
   };
 
   // Update table data when languages or posts change
+  
   useEffect(() => {
-    if (languges.length > 0 && posts.length > 0) {
+    if (languges.length > 0) {
       prepareData().then((data) => {
         setTableData(data);
         console.log("Final Data_ :", data);
@@ -160,6 +191,8 @@ export const DataTable = ({ searchh }) => {
     }
   }, [languges, posts]);
 
+  console.log("tableData :", tableData);
+  
   return (
     <div className="maintable">
       <table className="bodytable">
@@ -172,10 +205,19 @@ export const DataTable = ({ searchh }) => {
           </tr>
         </thead>
         <tbody>
-          {tableData.map((item, i) => (
-            <tr key={i}>
+            
+          {tableData.filter((item,i)=>{
+              console.log("item :",item)
+              return !search || search.trim() === '' ?
+              true :
+              item?.skill?.toLowerCase().includes(search.toLowerCase());
+
+
+              }).map((item, i) => (
+           
+           <tr key={i}>
               <td className="pskills">
-                <Link to={`/${item?.url}`}>{item?.skill}</Link>
+                <Link to={`/${item?.id}`}>{item?.skill}</Link>
               </td>
               <td className="levposts">{item?.level}</td>
               <td className="levposts">{item?.posts}</td>
@@ -184,7 +226,7 @@ export const DataTable = ({ searchh }) => {
                   <ul className="lapost-list">
                     <li className="lapost-date">
                       <NavLink
-                        to={`/${item?.lastpost_lang}/${item?.lastpost_level}/discussion?discussionId=${item?.lastpost_id}`}
+                        to={`/${item?.lang_id}/${item?.level_id}/discussion?discussionId=${item?.lastpost_id}`}
                         style={{ textDecoration: "none", color: " #00357d" }}
                       >
                         {item?.lastpost_time}
@@ -197,7 +239,7 @@ export const DataTable = ({ searchh }) => {
                       >
                         <img src={Img1} alt="abc" />
                         <span className="non-image">
-                          {item.lastpost_name}
+                          {item.lastpost_username}
                         </span>
                       </NavLink>
                     </li>

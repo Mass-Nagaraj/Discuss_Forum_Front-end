@@ -98,8 +98,6 @@ const Account = () => {
       Profile_click=null
     }
 
-    // const contents = ["Profile", "Topics Started", "Replies Created", "Likes","Saved"];
-    // const contents1 = ["Profile", "Topics Started", "Replies Created"];
 },[Profile_click])
 
 // console.log(" Profile_click : and selected ",Profile_click,Acc_option_selected)
@@ -123,11 +121,9 @@ const Account = () => {
   
   // email=Params1+"@bitsathy.ac.in";
   email=Params1;
-  // console.log("email passing and now_email:",email,nowemail)
-
   
   useEffect(()=>{
-    axios.post("http://localhost:2000/getAccUsername",{email:email})
+    axios.post("http://localhost:2000/profile_info",{email:email})
     .then((res)=>{
       // console.log(res.data)
       setUsername(res.data[0]?.username);
@@ -148,7 +144,9 @@ const Account = () => {
 
 
   useEffect(()=>{
-    axios.get('http://localhost:2000/users')
+    axios.post('http://localhost:2000/profile_info',{
+      email:email
+    })
     .then((res)=>{
       setResult(res.data)
     }).catch((err)=>{
@@ -156,14 +154,13 @@ const Account = () => {
     })
   },[]);
 
-
+  
   useEffect(()=>{
-    
-    axios.post("http://localhost:2000/profile",{
+    axios.post("http://localhost:2000/userPosts",{
       email:email
     })
     .then((res)=>{
-      setQuestions(res.data);     
+      setQuestions(res.data);
     }).catch((err)=>{
       console.log(err);
     })
@@ -172,7 +169,7 @@ const Account = () => {
   
 useEffect(()=>{
 
-    axios.post("http://localhost:2000/getallreplies",{
+    axios.post("http://localhost:2000/userReplies",{
       email:email
     })
     .then((res)=>{
@@ -199,64 +196,35 @@ const changeTrueFalse1 = (index) => {
   );
 };
 
-  let date,time,[fetchDate,fetchMonth,fetchYear,]=['','',''],[Hours,Minutes,seconds] =['','',''], a,roll_number,dept,batch;
+  let a,roll_number,dept,batch;
 
   // console.log("userss ",results)
   {results.map((value,index)=>{
     
     <div key={index}></div>
      
-    if(value.email == email){
+    if(value.email == email){  
+      let day, month, year;
+      const dateObj = new Date(value.date);
+      day = dateObj.getDate();             // Day of the month (1-31)
+      month = dateObj.getMonth() + 1;     // Month (0-11, so add 1)
+      year = dateObj.getFullYear();       // Full year (e.g., 2023)
       
-          [fetchDate, fetchMonth, fetchYear] = value.date?.split("/");
-          [Hours, Minutes] = value.time?.split(':');
-          arr2=[Number(fetchDate), Number(fetchMonth), Number(fetchYear)];
-          arr4=[Number(Hours), Number(Minutes)]; 
-          roll_number=value.roll_number;
-          dept=value.dept;
-          batch=value.batch         
+      const [Hours, Minutes] = value?.time?.split(":");
+
+      a=FindDate({ arr2: [
+        Number(day),
+        Number(month),
+        Number(year),
+      ] ,arr4:[Number(Hours), Number(Minutes)] });
+      
+      roll_number=value.roll_number;
+      dept=value.dept;
+      batch=value.batch         
     }
     
   })}
 
-  {questions?.map((value,index)=>{
-    <div key={index}></div>
-   
-    if(value.language==='C'){
-          c_count++;                  
-      }
-    if(value.language==='Python'){
-          py_count++;      
-      }
-    if(value.language==='Java'){
-          java_count++;       
-      }
-    if(value.language==='UI/UX'){
-          ui_count++;        
-      }
-    
-  })}
-  
-  {replies.map((value,index)=>{
-    <div key={index}></div>
-   
-    if(typeof value.language === 'string') {
-    
-    if(value.language==='C'){
-          c_reply_count++;                  
-      }
-    if(value.language==='Python'){
-          py_reply_count++;      
-      }
-    if(value.language==='Java'){
-          java_reply_count++;       
-      }
-    if(value.language==='UI/UX'){
-          ui_reply_count++;        
-      }
-    }
-    
-    })}
   
   
   if(nowemail=== email){
@@ -264,22 +232,18 @@ const changeTrueFalse1 = (index) => {
   }else{
     a=FindDate({ arr2:arr2 ,arr4:arr4 });
   }
-
-  // console.log('roll',roll_number)
   
   const renderComponent = () => {
-    // {console.log("before switch case :",selectedComponent)}
-
 
       switch (selectedComponent) {
         case '0':
           return <Profile email={email} nowemail={nowemail} active={a} questions={questions} replies={replies}/>
                   
         case '1':
-          return <TopicsStarted c_count={c_count} py_count={py_count} java_count={java_count} ui_count={ui_count} email={email} nowemail={nowemail} questions={questions} selectedComponent={selectedComponent}/>
+          return <TopicsStarted email={email} nowemail={nowemail} questions={questions} selectedComponent={selectedComponent}/>
                   
         case '2':
-          return <RepliesCreated  c_reply_count={c_reply_count} py_reply_count={py_reply_count} java_reply_count={java_reply_count} ui_reply_count={ui_reply_count} />
+          return <RepliesCreated  email={email} nowemail={nowemail} />
 
         case '3':
           return <Favourites email={email} nowemail={nowemail} active={a}/>

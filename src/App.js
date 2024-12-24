@@ -30,16 +30,43 @@ import Favourites_copy from './Account_Pages/Favourites copy';
 
 function App() {
 
-// const location=useLocation();
+const [languages,setLanguages]=useState([]);
+const [levels,setLevels]=useState([])
+const [posts,setPosts]=useState([])
 let email,username;
 
-// useEffect(()=>{
-//      if(location.pathname!== '/Account') {
-//           axios.get("http://localhost:2000/clear-Acc-Option")
-//           .then((res)=> console.log(res.data))
-//           .catch((err)=> console.log(err))
-//      }
-// },[location.pathname])    
+
+useEffect(()=>{
+     axios
+      .get("http://localhost:2000/getLanguages")
+      .then((res) => {
+          setLanguages(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+},[])
+
+
+useEffect(()=>{
+     axios.get(`http://localhost:2000/getLevels`)
+     .then((res)=>{
+       setLevels(res.data)
+     }).catch((err)=>{
+       console.log(err);
+     })
+},[])
+
+
+useEffect(()=>{
+     axios.get(`http://localhost:2000/getallposts`)
+     .then((res)=>{
+          setPosts(res.data)
+     }).catch((err)=>{
+       console.log(err);
+     })
+},[])
+ 
 
 const jwt_token=Cookies.get('token');
 if(jwt_token) {
@@ -48,8 +75,6 @@ if(jwt_token) {
      username= decode_payload.username;
 
 }
-
-//  console.log(email,username);
 
 return (
     <BrowserRouter>   
@@ -70,8 +95,30 @@ return (
           {/* Protected Routes  */}
           
           <Route  element={<ProtectedRoute />}>
+{/* 
+                    {languages.map((item, i) => {
                     
-                    {/* <Route path="/" element={<Navigate to="/Home" />} /> */}
+                         <Route key={i} path={`/${item.id}`} element={<Level/>} />
+                    })} */}
+
+                    {languages
+                    .map((item, i) => (
+                         <Route key={i} path={`/${item.id}`} element={<Level/>} />
+                    ))}   
+
+                    {levels
+                    .map((item, i) => (
+                         <Route key={i} path={`/${item.language_id}/${item.id}`} element={<Language/>} />
+                    ))}   
+
+                    {posts
+                    .map((item, i) => (
+                         <Route key={i} path={`/${item.language_id}/${item.level_id}/discussion`} element={<Questions/>} />
+                    ))}
+
+                    
+                    {/* <Route path='Level1/discussion' element={ <Questions/> } />      */}
+
                     <Route path='/Start_Discuss' element={<Discussionform/>} />
                     <Route path='/Home' element={<Home/>} />
                     <Route path='/c/levels' element={<Level/>} />
@@ -80,22 +127,18 @@ return (
                     <Route path='/UIUX/levels' element={<Level/>} />
                
                     <Route path='/Discussion/Questions' element={<Questions/>} />
-                    <Route path='/C' element={<Level/>} />
-                    <Route path='/Python' element={<Level/>} />
-                    <Route path='/Java' element={<Level/>} />
-                    <Route path='/UIUX' element={<Level/>} />
                     <Route path='/Account' element={<Account/>} />
                     
                     <Route path="/Account">
                          <Route path='Likes' element={<Favourites_copy/>} />
                     </Route>
 
-                    <Route path="/C">              
+                    {/* <Route path="/C">              
                          <Route path='Level1' element={ <Language/> } />
                          <Route path='Level2' element={ <Language/> } />
                          <Route path='Level3' element={ <Language/> } />
                          <Route path='Level4' element={ <Language/> } />
-                    </Route>
+                    </Route> */}
 
                     <Route path="/Python">              
                          <Route path='Level1' element={ <Language/> } />

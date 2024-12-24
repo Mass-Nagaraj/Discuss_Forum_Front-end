@@ -7,13 +7,6 @@ const ViewReplies = ({MainReplyId,MainReplyUsername,SubReplyId,SubReplyUsername,
 const [viewReply,setViewReply]=useState(false);
 const [subb,setSubb]=useState([]);
 
-
-// useEffect(()=>{
-
-//     console.log("subb",subb);
-// },[subb])
-
-
   return (
     <>
      <button className="open-btn" onClick={()=>{
